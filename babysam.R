@@ -1,34 +1,40 @@
+library(stockassessment)
+fit<-fitfromweb("NEA_sei_21_v5Reca")
+
+dat<-list()
+dat$obs <- exp(fit$data$logobs)
+dat$aux <- fit$data$aux
+dat$idx1 <- fit$data$idx1
+dat$idx2 <- fit$data$idx2
+dat$minYear <- min(fit$data$years)
+dat$minAge <- min(fit$data$minAgePerFleet)
+dat$fleetTypes <- fit$data$fleetTypes
+dat$sampleTimes <- fit$data$sampleTimes
+dat$year <- fit$data$years
+dat$age <-  min(fit$data$minAgePerFleet):max(fit$data$maxAgePerFleet)   
+dat$M <- fit$data$natMor
+dat$SW <- fit$data$stockMeanWeight
+dat$MO <- fit$data$propMat
+dat$PF <- fit$data$propF
+dat$PM <- fit$data$propM
+
+dat$srmode <- 2
+dat$fcormode <- 2
+dat$keyF <- fit$conf$keyLogFsta[1,]
+dat$keyQ <- fit$conf$keyLogFpar
+dat$keySd <- fit$conf$keyVarObs
+dat$keySd[dat$keySd<(-.1)] <- NA
+dat$covType <- as.integer(fit$conf$obsCorStruct)-1
+dat$keyIGAR <- fit$conf$keyCorObs
+dat$noParUS <- sapply(1:length(dat$fleetTypes),
+                      function(f){
+                        A <- sum(!is.na(dat$keySd[f,]))
+                        ifelse(dat$covType[f]==2, (A*A-A)/2, 0)
+                      })
+
 library(TMB)
 compile("babysam.cpp")
 dyn.load(dynlib("babysam"))
-
-load("dat.RData")
-
-dat$srmode <- 0
-dat$fcormode <- 2
-
-dat$keyF <- c(0,1,2,3,4,5,6,7,7)
-
-dat$keyQ <- rbind(c(NA,NA,NA,NA,NA,NA,NA,NA,NA),
-                  c(NA, 0, 1, 2, 3, 4, 5, 5,NA),
-                  c( 6, 7, 8, 9,10,10,NA,NA,NA))
-
-dat$keySd <- rbind(c( 0, 0, 0, 0, 0, 0, 0, 0, 0),
-                   c(NA, 1, 1, 1, 1, 1, 1, 1,NA),
-                   c( 2, 2, 2, 2, 2, 2,NA,NA,NA))
-
-dat$covType <- c(0,1,2) # 0=ID, 1=IGAR, 2=US ...
-
-                    #  0-1 1-2 2-3 3-4 4-5 5-6 6-7 7-8 
-dat$keyIGAR <- rbind(c( -1, -1, -1, -1, -1, -1, -1, -1),
-                     c( NA, 0,  0, 0, 0, 0, 0, NA),
-                     c(-1, -1, -1, -1, -1, NA, NA, NA))
-
-dat$noParUS <- sapply(1:length(dat$fleetTypes),
-                      function(f){
-                        A<-sum(!is.na(dat$keySd[f,]))
-                        ifelse(dat$covType[f]==2, (A*A-A)/2, 0)
-                      })
 
 par <- list()
 par$logsdR <-0

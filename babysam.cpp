@@ -98,19 +98,26 @@ Type objective_function<Type>::operator() ()
   vector<Type> ssb = ssbFUN(logN,logFF,M,SW,MO,PF,PM);
 
   // ############################################# N part
-  Type predN;
+  Type predN, thisSSB;
   for(int y=1; y<nrow; ++y){
+
+    if((y-minAge)>=0){
+      thisSSB=ssb(y-minAge);
+    }else{
+      thisSSB=ssb(0); // use first in beginning       
+    } 
+
     switch(srmode){
       case 0:
         predN = logN(y-1,0);
       break;
 
       case 1:
-	predN = rickerpar(0)+log(ssb(y))-exp(rickerpar(1))*ssb(y);
+	predN = rickerpar(0)+log(thisSSB)-exp(rickerpar(1))*thisSSB;
       break;
 
       case 2:
-        predN = bhpar(0)+log(ssb(y))-log(1.0+exp(bhpar(1))*ssb(y));
+        predN = bhpar(0)+log(thisSSB)-log(1.0+exp(bhpar(1))*thisSSB);
       break;
 
       default:
