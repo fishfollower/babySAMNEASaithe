@@ -53,5 +53,5 @@ par$missing <- numeric(sum(is.na(dat$obs)))
 
 obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))))
 
-fit <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
+opt <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
 
