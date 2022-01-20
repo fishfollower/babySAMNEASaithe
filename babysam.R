@@ -1,6 +1,6 @@
 library(stockassessment)
-fit<-fitfromweb("NEA_sei_21_v5Reca")
-
+#fit<-fitfromweb("NEA_sei_21_v5Reca")
+load("fit.RData")
 dat<-list()
 dat$obs <- exp(fit$data$logobs)
 dat$aux <- fit$data$aux
@@ -51,7 +51,8 @@ par$logN <- matrix(0, nrow=length(dat$year), ncol=length(dat$age))
 par$logF <- matrix(0, nrow=length(dat$year), ncol=max(dat$keyF)+1)
 par$missing <- numeric(sum(is.na(dat$obs)))
 
-obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))))
+
+obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=TRUE)
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
 
