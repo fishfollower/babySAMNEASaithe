@@ -52,7 +52,12 @@ par$logF <- matrix(0, nrow=length(dat$year), ncol=max(dat$keyF)+1)
 par$missing <- numeric(sum(is.na(dat$obs)))
 
 
-obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=TRUE)
+#obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=TRUE)
 
-opt <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
+#opt <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
+
+#sdr<-sdreport(obj)
+
+
+arg<-list(data=dat, parameters=par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=TRUE)
 
