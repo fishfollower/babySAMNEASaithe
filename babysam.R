@@ -24,16 +24,21 @@ dat$keyF <- fit$conf$keyLogFsta[1,]
 dat$keyQ <- fit$conf$keyLogFpar
 dat$keySd <- fit$conf$keyVarObs
 dat$keySd[dat$keySd<(-.1)] <- NA
-dat$covType <- as.integer(fit$conf$obsCorStruct)-1
+dat$covType <- c(0,1,2) #as.integer(fit$conf$obsCorStruct)-1
 dat$keyIGAR <- fit$conf$keyCorObs
+dat$keyIGAR[fit$conf$keyCorObs==-1] <- NA
+dat$keyIGAR[is.na(fit$conf$keyCorObs)] <- -1
+dat$keyIGAR[2, 1:4]<-0
 dat$noParUS <- sapply(1:length(dat$fleetTypes),
                       function(f){
                         A <- sum(!is.na(dat$keySd[f,]))
                         ifelse(dat$covType[f]==2, (A*A-A)/2, 0)
                       })
 
+#dat$obs[c(7,9,13)+100]<-NA
+
 library(TMB)
-compile("babysam.cpp")
+compile("babysam.cpp", framework="TMBad")#, flags="-g -O0")
 dyn.load(dynlib("babysam"))
 
 par <- list()

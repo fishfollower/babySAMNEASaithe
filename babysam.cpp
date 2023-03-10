@@ -92,7 +92,7 @@ Type objective_function<Type>::operator() ()
       logFF(i,j)=logF(i,keyF(j));
     }
   }
-  
+  vector<Type> nlpart(4);
   Type jnll=0;
   
   vector<Type> ssb = ssbFUN(logN,logFF,M,SW,MO,PF,PM);
@@ -127,7 +127,8 @@ Type objective_function<Type>::operator() ()
     }
     jnll += -dnorm(logN(y,0),predN,sdR,true);
   }
-
+  nlpart(0)=jnll;
+  
   for(int y=1; y<nrow; ++y){
     for(int a=1; a<ncol; ++a){
       predN=logN(y-1,a-1)-exp(logFF(y-1,a-1))-M(y-1,a-1);
@@ -137,7 +138,7 @@ Type objective_function<Type>::operator() ()
       jnll += -dnorm(logN(y,a),predN,sdS,true);
     }
   }
-
+  nlpart(1)=jnll;
 
   // ############################################# F part
   matrix<Type> SigmaF(logF.cols(),logF.cols());
@@ -181,7 +182,7 @@ Type objective_function<Type>::operator() ()
   for(int y=1; y<nrow; ++y){
     jnll += nldens(logF.row(y)-logF.row(y-1));
   }
-
+  nlpart(2)=jnll;
   /// obs part
   
   vector<Type> logPred(nobs);
@@ -284,8 +285,12 @@ Type objective_function<Type>::operator() ()
       }
     }
   }
-
+  nlpart(3)=jnll;
+  vector<Type> logObs=log(obs);
+  REPORT(logObs)
+  REPORT(logPred)
   REPORT(Svec);
+  REPORT(nlpart);
   ADREPORT(ssb);
   return jnll;
 }
