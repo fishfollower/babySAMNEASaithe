@@ -38,8 +38,8 @@ dat$noParUS <- sapply(1:length(dat$fleetTypes),
 #dat$obs[c(7,9,13)+100]<-NA
 
 library(TMB)
-compile("babysam.cpp", framework="TMBad")#, flags="-g -O0")
-dyn.load(dynlib("babysam"))
+compile("babycam.cpp", framework="TMBad")#, flags="-g -O0") 
+dyn.load(dynlib("babycam"))
 
 par <- list()
 par$logsdR <-0
@@ -57,14 +57,17 @@ par$logF <- matrix(0, nrow=length(dat$year), ncol=max(dat$keyF)+1)
 par$missing <- numeric(sum(is.na(dat$obs)))
 
 
-obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
 
-#obj$fn()
+obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
+#obj <- MakeADFun(dat, par, DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
 
+obj$fn()
+
+#stop("done")
 opt <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
 
-#sdr<-sdreport(obj)
-
+sdr<-sdreport(obj)
+pl<-as.list(sdr, "Est")
 
 #arg<-list(data=dat, parameters=par, random=c("logN", "logF", "missing"), DLL="babysam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=TRUE)
 

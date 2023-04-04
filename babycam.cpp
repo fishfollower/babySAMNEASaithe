@@ -1,5 +1,4 @@
 #include <TMB.hpp>
-
 template<class Type>
 bool isNA(Type x){
   return R_IsNA(asDouble(x));
@@ -26,6 +25,19 @@ vector<Type> ssbFUN(matrix<Type> logN, matrix<Type> logFF, matrix<Type> M, matri
     }
   }
   return ret;
+}
+
+template<class Type>
+vector<Type> xExpA(vector<Type> x, Eigen::SparseMatrix<Type> A, int Nstep=20){
+  matrix<Type> Yrow(1,x.size()), lastTerm(1,x.size()); 
+  Yrow.row(0)=x;
+  lastTerm.row(0)=x;
+  for(int i=1; i<=Nstep; ++i){
+    lastTerm=lastTerm*A/i;
+    Yrow+=lastTerm;
+  }
+  vector<Type> y=Yrow.row(0);
+  return y;
 }
 
 template<class Type>
@@ -77,9 +89,6 @@ Type objective_function<Type>::operator() ()
   vector<Type> sdF = exp(logsdF);      
   vector<Type> sd=exp(logsd);
   Type rhoF=0;
-
-
-
   
   //patch missing 
   int idxmis=0; 
@@ -95,7 +104,129 @@ Type objective_function<Type>::operator() ()
       logFF(i,j)=logF(i,keyF(j));
     }
   }
-  vector<Type> nlpart(4);
+
+  // non-sparse ed //////////////////////////////////////////////// 
+  //  vector< matrix<Type> > Avec(nrow);
+  //   
+  //  int Adim = 3*ncol;
+  //  for(int i=0; i<nrow; ++i){
+  //    matrix<Type> AA(Adim,Adim); AA.setZero();
+  //    for(int j=0; j<ncol; ++j){
+  //      AA(j,j+ncol) = exp(logFF(i,j));
+  //      AA(j,j+2*ncol) = M(i,j);
+  //      AA(j,j) = -exp(logFF(i,j))-M(i,j); // negative row sum
+  //    }
+  //    Avec(i) = AA;
+  //  }
+  //  
+  //  matrix<Type> firstState(nrow,Adim);
+  //  firstState.setZero();
+  //  matrix<Type> lastState(nrow,Adim);  
+  //  lastState.setZero();
+  //  for(int i=0; i<nrow; ++i){
+  //    for(int j=0; j<ncol; ++j){
+  //      firstState(i,j)=exp(logN(i,j));
+  //    }
+  //    lastState.row(i)=firstState.row(i)*atomic::expm(Avec(i)); 
+  //  }
+  //  REPORT(firstState);
+  //  REPORT(lastState);
+  //  std::cout<<lastState.row(5)<<std::endl;
+
+  
+  //  sparse ed  /////////////////////////////////////////////////// 
+  //  vector< Eigen::SparseMatrix<Type> > Avec(nrow);
+  //  
+  //  int Adim = 3*ncol;
+  //  for(int i=0; i<nrow; ++i){
+  //    Eigen::SparseMatrix<Type> AA(Adim,Adim);
+  //    for(int j=0; j<ncol; ++j){
+  //      AA.coeffRef(j,j+ncol) = exp(logFF(i,j));
+  //      AA.coeffRef(j,j+2*ncol) = M(i,j);
+  //      AA.coeffRef(j,j) = -exp(logFF(i,j))-M(i,j); // negative row sum
+  //    }
+  //    // to cheat TMB (expm seems not to like sparse-zero diag elements)
+  //      for(int j=ncol; j<AA.cols(); ++j){
+  //        AA.coeffRef(j,j) = 0; 
+  //      }
+  //      Avec(i) = AA;
+  //    }
+  //
+  //  matrix<Type> firstState(nrow,Adim);
+  //  firstState.setZero();
+  //  matrix<Type> lastState(nrow,Adim);  
+  //  lastState.setZero();
+  //  sparse_matrix_exponential::config<Type> myconfig = sparse_matrix_exponential::config<Type>();
+  //  myconfig.Nmax = 1000;
+  //  for(int i=0; i<nrow; ++i){
+  //    for(int j=0; j<ncol; ++j){
+  //      firstState(i,j)=exp(logN(i,j));
+  //    }
+  //    Eigen::SparseMatrix<Type> tmp=Avec(i);
+  //    sparse_matrix_exponential::expm_generator<Type> eg(tmp,myconfig);
+  //    vector<Type> t2=firstState.row(i);
+  //    lastState.row(i)=eg(t2).array();
+  //  }
+  //  //std::cout<<lastState.row(5)<<std::endl;
+
+  // sparse 2. ed  /////////////////////////////////////////////////// 
+  //  vector< Eigen::SparseMatrix<Type> > Avec(nrow);
+  //  
+  //  int Adim = 3*ncol;
+  //  for(int i=0; i<nrow; ++i){
+  //    Eigen::SparseMatrix<Type> AA(Adim,Adim);
+  //    for(int j=0; j<ncol; ++j){
+  //      AA.coeffRef(j,j+ncol) = exp(logFF(i,j));
+  //      AA.coeffRef(j,j+2*ncol) = M(i,j);
+  //      AA.coeffRef(j,j) = -exp(logFF(i,j))-M(i,j); // negative row sum
+  //    }
+  //    Avec(i) = AA;
+  //  }
+  //  
+  //  matrix<Type> firstState(nrow,Adim);
+  //  firstState.setZero();
+  //  matrix<Type> lastState(nrow,Adim);  
+  //  lastState.setZero();
+  //  int Nstep = 20;
+  //  for(int i=0; i<nrow; ++i){
+  //    for(int j=0; j<ncol; ++j){
+  //      firstState(i,j)=exp(logN(i,j));
+  //    }
+  //    lastState.row(i)=firstState.row(i);
+  //    matrix<Type> lastTerm=lastState.row(i);
+  //    Eigen::SparseMatrix<Type> tmp=Avec(i);
+  //    for(int ii=1; ii<=Nstep; ++ii){
+  //      lastTerm=lastTerm*tmp/ii;
+  //      lastState.row(i)+=lastTerm;
+  //    }
+  //  }
+
+
+  // sparse 3. ed  /////////////////////////////////////////////////// 
+  vector< Eigen::SparseMatrix<Type> > Avec(nrow);
+  
+  int Adim = 3*ncol;
+  for(int i=0; i<nrow; ++i){
+    Eigen::SparseMatrix<Type> AA(Adim,Adim);
+    for(int j=0; j<ncol; ++j){
+      AA.coeffRef(j,j+ncol) = exp(logFF(i,j));
+      AA.coeffRef(j,j+2*ncol) = M(i,j);
+      AA.coeffRef(j,j) = -exp(logFF(i,j))-M(i,j); // negative row sum
+    }
+    Avec(i) = AA;
+  }
+  
+  matrix<Type> firstState(nrow,Adim);
+  firstState.setZero();
+  matrix<Type> lastState(nrow,Adim);  
+  lastState.setZero();
+  for(int i=0; i<nrow; ++i){
+    for(int j=0; j<ncol; ++j){
+      firstState(i,j)=exp(logN(i,j));
+    }
+    lastState.row(i)=xExpA(vector<Type>(firstState.row(i)),Avec(i)); 
+  }
+  
   Type jnll=0;
   
   vector<Type> ssb = ssbFUN(logN,logFF,M,SW,MO,PF,PM);
@@ -130,18 +261,16 @@ Type objective_function<Type>::operator() ()
     }
     jnll += -dnorm(logN(y,0),predN,sdR,true);
   }
-  nlpart(0)=jnll;
   
   for(int y=1; y<nrow; ++y){
     for(int a=1; a<ncol; ++a){
-      predN=logN(y-1,a-1)-exp(logFF(y-1,a-1))-M(y-1,a-1);
+      predN=log(lastState(y-1,a-1));
       if(a==(ncol-1)){
-        predN=log(exp(predN)+exp(logN(y-1,a)-exp(logFF(y-1,a))-M(y-1,a)));
+        predN=log(lastState(y-1,a-1)+lastState(y-1,a));
       }
       jnll += -dnorm(logN(y,a),predN,sdS,true);
     }
   }
-  nlpart(1)=jnll;
 
   // ############################################# F part
   matrix<Type> SigmaF(logF.cols(),logF.cols());
@@ -185,7 +314,6 @@ Type objective_function<Type>::operator() ()
   for(int y=1; y<nrow; ++y){
     jnll += nldens(logF.row(y)-logF.row(y-1));
   }
-  nlpart(2)=jnll;
   /// obs part
   
   vector<Type> logPred(nobs);
@@ -198,11 +326,11 @@ Type objective_function<Type>::operator() ()
     Z=exp(logFF(y,a))+M(y,a);
     switch(fleetTypes(f)){
       case 0:
-        logPred(i) = logN(y,a)-log(Z)+log(1-exp(-Z))+logFF(y,a);
+        logPred(i) = log(lastState(y,a+ncol));//logN(y,a)-log(Z)+log(1-exp(-Z))+logFF(y,a);
       break;
       
       case 2:
-        logPred(i) = logQ(keyQ(f,a))+logN(y,a)-Z*sampleTimes(f);
+        logPred(i) = logQ(keyQ(f,a))+log(xExpA(vector<Type>(firstState.row(y)),  Eigen::SparseMatrix<Type>(Avec(y)*sampleTimes(f))))(a); // logQ(keyQ(f,a))+logN(y,a)-Z*sampleTimes(f);
       break;
 
       default:
@@ -288,12 +416,10 @@ Type objective_function<Type>::operator() ()
       }
     }
   }
-  nlpart(3)=jnll;
   vector<Type> logObs=log(obs);
   REPORT(logObs)
   REPORT(logPred)
   REPORT(Svec);
-  REPORT(nlpart);
   ADREPORT(ssb);
   return jnll;
 }
