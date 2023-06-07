@@ -39,7 +39,7 @@ dat$noParUS <- sapply(1:length(dat$fleetTypes),
                         ifelse(dat$covType[f]==2, (A*A-A)/2, 0)
                       })
 
-varF1<-diag(0.14, length(which(dat$aux[,"fleet"]==1)))+.01
+varF1<-diag(0.14, length(which(dat$aux[,"fleet"]==1)))+.001
 dat$gigaVar<-list(varF1, NA, NA)
 
 #dat$logobs[c(7,9,13)+100]<-NA
@@ -231,7 +231,7 @@ jnll<-function(par){
         }
       }
     }else{
-      idx<-which(dat$aux[,"fleet"]==f)
+      idx<-which(aux[,"fleet"]==f)
       jnll <- jnll -  dmvnorm(logobs[idx],logPred[idx],gigaVar[[f]],log=TRUE)  
     }
   }
