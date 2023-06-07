@@ -24,8 +24,11 @@ dat$fcormode <- 2
 dat$keyF <- fit$conf$keyLogFsta[1,]
 dat$keyQ <- fit$conf$keyLogFpar
 dat$keySd <- fit$conf$keyVarObs
+dat$keySd[1,]<-NA
+dat$keySd[2,1:5]<-0
+dat$keySd[3,1:5]<-1
 dat$keySd[dat$keySd<(-.1)] <- NA
-dat$covType <- c(0,1,2) #as.integer(fit$conf$obsCorStruct)-1
+dat$covType <- c(10,1,2) #as.integer(fit$conf$obsCorStruct)-1
 dat$keyIGAR <- fit$conf$keyCorObs
 dat$keyIGAR[fit$conf$keyCorObs==-1] <- NA
 dat$keyIGAR[is.na(fit$conf$keyCorObs)] <- -1
@@ -36,6 +39,8 @@ dat$noParUS <- sapply(1:length(dat$fleetTypes),
                         ifelse(dat$covType[f]==2, (A*A-A)/2, 0)
                       })
 
+varF1<-diag(0.14, length(which(dat$aux[,"fleet"]==1)))+.01
+dat$gigaVar<-list(varF1, NA, NA)
 
 #dat$logobs[c(7,9,13)+100]<-NA
 
@@ -211,15 +216,23 @@ jnll<-function(par){
       D <- diag(sdvec)
       S <- D%*%R%*%D
     }
+    if(covType[f]==10){
+      ## do nothing
+    }
     Svec[[f]] <- S;
   }
   
   for(f in 1:nrow(idx1)){
-    for(y in 1:ncol(idx1)){
-      if(!is.na(idx1[f,y])){
-        idx <- (idx1[f,y]+1):(idx2[f,y]+1)     
-        jnll <- jnll -  dmvnorm(logobs[idx],logPred[idx],Svec[[f]],log=TRUE)
+    if(covType[f]!=10){  
+      for(y in 1:ncol(idx1)){
+        if(!is.na(idx1[f,y])){
+          idx <- (idx1[f,y]+1):(idx2[f,y]+1)     
+          jnll <- jnll -  dmvnorm(logobs[idx],logPred[idx],Svec[[f]],log=TRUE)
+        }
       }
+    }else{
+      idx<-which(dat$aux[,"fleet"]==f)
+      jnll <- jnll -  dmvnorm(logobs[idx],logPred[idx],gigaVar[[f]],log=TRUE)  
     }
   }
   REPORT(logPred)
