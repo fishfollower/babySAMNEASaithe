@@ -38,7 +38,7 @@ dat$noParUS <- sapply(1:length(dat$fleetTypes),
 #dat$obs[c(7,9,13)+100]<-NA
 
 library(TMB)
-compile("babysam.cpp", framework="TMBad")#, flags="-g -O0")
+compile("babysam.cpp") #, framework="TMBad")#, flags="-g -O0")
 dyn.load(dynlib("babysam"))
 
 par <- list()
@@ -62,6 +62,8 @@ obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babysam", m
 #obj$fn()
 
 opt <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
+
+opt$objective
 
 #sdr<-sdreport(obj)
 

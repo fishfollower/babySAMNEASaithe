@@ -1,6 +1,7 @@
 library(stockassessment)
 #fit<-fitfromweb("NEA_sei_21_v5Reca")
 load("fit.RData")
+
 dat<-list()
 dat$obs <- exp(fit$data$logobs)
 dat$aux <- fit$data$aux
@@ -34,7 +35,7 @@ dat$noParUS <- sapply(1:length(dat$fleetTypes),
                         A <- sum(!is.na(dat$keySd[f,]))
                         ifelse(dat$covType[f]==2, (A*A-A)/2, 0)
                       })
-
+dat$mode<-2
 #dat$obs[c(7,9,13)+100]<-NA
 
 library(TMB)
@@ -56,14 +57,30 @@ par$logN <- matrix(0, nrow=length(dat$year), ncol=length(dat$age))
 par$logF <- matrix(0, nrow=length(dat$year), ncol=max(dat$keyF)+1)
 par$missing <- numeric(sum(is.na(dat$obs)))
 
-
-
-obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
-#obj <- MakeADFun(dat, par, DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
-
+#
+dat$mode<-0 # dense
+obj <- MakeADFun(dat, par, DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
 obj$fn()
+#g1<-obj$gr()
 
-#stop("done")
+dat$mode<-1 # generator
+obj <- MakeADFun(dat, par, DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
+obj$fn()
+#g2<-obj$gr()
+
+dat$mode<-2 # hand written
+obj <- MakeADFun(dat, par, DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
+obj$fn()
+#g3<-obj$gr()
+
+#dat$mode<-1 # generator
+#obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
+#TMB:::checkSparseHessian(obj)
+
+
+                                        #stop("done")
+dat$mode<-1 # Kasper
+obj <- MakeADFun(dat, par, random=c("logN", "logF", "missing"), DLL="babycam", map=list(logsdF=as.factor(rep(0,length(par$logsdF)))), silent=FALSE)
 opt <- nlminb(obj$par, obj$fn, obj$gr, control=list(eval.max=1000, iter.max=1000))
 
 sdr<-sdreport(obj)
