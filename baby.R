@@ -130,8 +130,8 @@ jnll<-function(par){
   if(fcormode==1){
     diag(SigmaF) <- sdF*sdF
     rhoF <- itrans(transRhoF[1])
-    for(i in 1:ncol(logF)){
-      for(j in 2:(i-1)){
+    for(i in 2:ncol(logF)){
+      for(j in 1:(i-1)){
         SigmaF[i,j] <- rhoF*sdF[i]*sdF[j]
         SigmaF[j,i] <- SigmaF[i,j] 
       }
@@ -141,8 +141,8 @@ jnll<-function(par){
   if(fcormode==2){
     diag(SigmaF) <- sdF*sdF
     rhoF <- itrans(transRhoF[1])
-    for(i in 1:ncol(logF)){
-      for(j in 2:(i-1)){
+    for(i in 2:ncol(logF)){
+      for(j in 1:(i-1)){
         SigmaF[i,j] <- sdF[i]*sdF[j]*(rhoF^(i-j))
         SigmaF[j,i] <- SigmaF[i,j] 
       }
